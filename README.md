@@ -1,4 +1,5 @@
 ### UrbanRise
+---
 
 În UrbanRise, jucătorii preiau rolul unui primar care trebuie să construiască și să administreze un oraș în plină dezvoltare. Fiecare zonă a orașului poate fi destinată unor scopuri diferite - rezidențiale, comerciale sau industriale - iar deciziile jucătorului influențează direct creșterea populației, economia și nivelul de satisfacție al locuitorilor.
 
