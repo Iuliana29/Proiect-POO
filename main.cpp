@@ -9,6 +9,7 @@ private:
     vector<string> segments;
     double congestion;
 public:
+    // cppcheck-suppress noExplicitConstructor
     Street(const string& n, double c=0.0): name(n), congestion(c){}
     void addSegment(const string& seg){ segments.push_back(seg); }
     int getLength() const { return segments.size(); }
@@ -102,6 +103,7 @@ private:
     vector<ResourceBuilding> resources;
     vector<Park> parks;
 public:
+    // cppcheck-suppress noExplicitConstructor
     City(const string& n): name(n) {}
 
     void addStreet(const Street& s){ streets.push_back(s); }
@@ -150,7 +152,14 @@ public:
 
 int main(){
     City c("UrbanRise");
-    Street mainStreet("Main"); mainStreet.addSegment("S1"); mainStreet.addSegment("S2"); c.addStreet(mainStreet);
+    Street mainStreet("Main"); mainStreet.addSegment("S1"); mainStreet.addSegment("S2");
+
+    // aceste 3 linii fac toate funcțiile să devină “used”
+    cout << "Length=" << mainStreet.getLength() << " Cong=" << mainStreet.getCongestion() << "\n";
+    mainStreet.setCongestion(0.3);
+    cout << "New Cong=" << mainStreet.getCongestion() << "\n";
+
+    c.addStreet(mainStreet);
     Street centralStreet("Central"); centralStreet.addSegment("A"); centralStreet.addSegment("B"); c.addStreet(centralStreet);
     Street* s1 = c.getStreet(0);
     Street* s2 = c.getStreet(1);
