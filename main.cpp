@@ -60,14 +60,13 @@ public:
 // --- ResidentialBuilding cu resurse ---
 class ResidentialBuilding : public Building {
     int capacity;
-    double utilitiesUsage;
     map<string,int> resourcesNeeded;
     int moneyProducedPerUpgrade;
     Street* street;
 public:
-    ResidentialBuilding(const string& n, int cap, double util, int lvl,
+    ResidentialBuilding(const string& n, int cap, int lvl,
                         const map<string,int>& resNeeded, int moneyGain, Street* st)
-        : Building(n, lvl, 3), capacity(cap), utilitiesUsage(util),
+        : Building(n, lvl, 3), capacity(cap),
           resourcesNeeded(resNeeded), moneyProducedPerUpgrade(moneyGain), street(st) {}
 
     int getCapacity() const { return capacity * level; }
@@ -269,7 +268,7 @@ int main() {
             resNeeded[rName] = rQty;
         }
         Street* stPtr = city.getStreet(1);
-        city.addResidential(ResidentialBuilding(resName, cap, 0.5, 1, resNeeded, moneyGain, stPtr));
+        city.addResidential(ResidentialBuilding(resName, cap, 1, resNeeded, moneyGain, stPtr));
         cin.ignore();
     }
 
