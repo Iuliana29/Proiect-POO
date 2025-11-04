@@ -26,9 +26,9 @@ public:
         }
         return false;
     }
-    int getLength() const { return static_cast<int>(segments.size()); }
-    int getLevel() const { return level; }
-    string getRoadType() const {
+    [[nodiscard]] int getLength() const { return static_cast<int>(segments.size()); }
+    [[nodiscard]] int getLevel() const { return level; }
+    [[nodiscard]] string getRoadType() const {
         switch (level) {
         case 1: return "Two lane road";
         case 2: return "Four lane road";
@@ -51,9 +51,9 @@ protected:
 public:
     explicit Building(string n = "Building", int lvl = 1, int maxL = 3)
         : name(std::move(n)), level(max(1, min(maxL, lvl))), maxLevel(maxL) {}
-    const string& getName() const { return name; }
-    int getLevel() const { return level; }
-    int getMaxLevel() const { return maxLevel; }
+    [[nodiscard]] const string& getName() const { return name; }
+    [[nodiscard]] int getLevel() const { return level; }
+    [[nodiscard]] int getMaxLevel() const { return maxLevel; }
     friend ostream& operator<<(ostream& os, const Building& b) {
         os << "Building(name=" << b.name << ", level=" << b.level << ")";
         return os;
@@ -71,9 +71,9 @@ public:
         : Building(n, lvl, 3), capacity(cap),
           resourcesNeeded(resNeeded), moneyProducedPerUpgrade(moneyGain), street(st) {}
 
-    int getCapacity() const { return capacity * level; }
-    const map<string,int>& getResourcesNeeded() const { return resourcesNeeded; }
-    Street* getStreet() const { return street; }
+    [[nodiscard]] int getCapacity() const { return capacity * level; }
+    [[nodiscard]] const map<string,int>& getResourcesNeeded() const { return resourcesNeeded; }
+    [[nodiscard]] Street* getStreet() const { return street; }
 
     bool upgrade(map<string,int>& cityResources, int& money) {
         if (level >= maxLevel) return false;
@@ -112,9 +112,9 @@ class UtilityBuilding : public Building {
 public:
     UtilityBuilding(const string& n, string t, double cov, int lvl, int moneyCost, Street* st)
         : Building(n, lvl, 3), coverage(cov), moneyCostPerUpgrade(moneyCost), type(std::move(t)), street(st) {}
-    double getCoverage() const { return coverage; }
-    const string& getType() const { return type; }
-    Street* getStreet() const { return street; }
+    [[nodiscard]] double getCoverage() const { return coverage; }
+    [[nodiscard]] const string& getType() const { return type; }
+    [[nodiscard]] Street* getStreet() const { return street; }
     bool upgrade(int& money) {
         if (level >= maxLevel || money < moneyCostPerUpgrade) return false;
         money -= moneyCostPerUpgrade;
@@ -138,8 +138,8 @@ public:
     Park(const string& n, double boost, int mCost, Street* st)
         : Building(n), populationBoost(boost), moneyCost(mCost), street(st) {}
 
-    double getBoost() const { return populationBoost; }
-    int getCost() const { return moneyCost; }
+    [[nodiscard]] double getBoost() const { return populationBoost; }
+    [[nodiscard]] int getCost() const { return moneyCost; }
 
     friend ostream& operator<<(ostream& os, const Park& p) {
         os << "Park(" << static_cast<const Building&>(p)
@@ -167,14 +167,14 @@ public:
     void addPark(const Park& p) { parks.push_back(p); money -= p.getCost(); }
 
     void addResource(const string& type, int amount) { cityResources[type] += amount; }
-    int getMoney() const { return money; }
+    [[nodiscard]] int getMoney() const { return money; }
 
     void upgradeAllResidential() {
         for (auto& r : residential)
             r.upgrade(cityResources, money);
     }
 
-    double calculateTotalPopulation() const {
+    [[nodiscard]] double calculateTotalPopulation() const {
         int baseCap = 0;
         for (const auto& r : residential) baseCap += r.getCapacity();
         double boost = 0.0;
@@ -182,7 +182,7 @@ public:
         return baseCap * (1.0 + (boost / 100.0));
     }
 
-    bool utilitiesCoverPopulation() const {
+    [[nodiscard]] bool utilitiesCoverPopulation() const {
         double totalCoverage = 0.0;
         for (const auto& u : utilities) totalCoverage += u.getCoverage();
         double totalPopulation = calculateTotalPopulation();
@@ -191,13 +191,13 @@ public:
         return totalCoverage >= totalPopulation;
     }
 
-    int getMaxBuildings() const {
+    [[nodiscard]] int getMaxBuildings() const {
         int totalSegments = 0;
         for (const auto& s : streets) totalSegments += s.getLength();
         return totalSegments * 2;
     }
 
-    int getRemainingBuildingSlots() const {
+    [[nodiscard]] int getRemainingBuildingSlots() const {
         int totalBuildings = static_cast<int>(residential.size() + utilities.size() + parks.size());
         return getMaxBuildings() - totalBuildings;
     }
