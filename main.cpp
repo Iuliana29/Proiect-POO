@@ -1,15 +1,24 @@
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <string>
 #include <map>
 #include <algorithm>
+#include <limits> // <-- Added for robust input clearing
+
 using namespace std;
+
+// Forward declaration needed for the robust cin.ignore fix
+// Used to clear the input buffer of any leftover characters, including the newline
+void clearInputBuffer() {
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+}
 
 class Street {
     vector<int> segments;
     int level;
 public:
-    Street(int lvl = 1) : level(max(1, min(3, lvl))) {}
+    explicit Street(int lvl = 1) : level(max(1, min(3, lvl))) {}
     void addSegment(const int& seg) { segments.push_back(seg); }
     int getLength() const { return static_cast<int>(segments.size()); }
     int getLevel() const { return level; }
@@ -34,8 +43,8 @@ protected:
     int level;
     int maxLevel;
 public:
-    Building(const string& n = "Building", int lvl = 1, int maxL = 3)
-        : name(n), level(max(1, min(maxL, lvl))), maxLevel(maxL) {}
+    explicit Building(string n = "Building", int lvl = 1, int maxL = 3)
+        : name(std::move(n)), level(max(1, min(maxL, lvl))), maxLevel(maxL) {}
     const string& getName() const { return name; }
     int getLevel() const { return level; }
     int getMaxLevel() const { return maxLevel; }
@@ -95,8 +104,8 @@ class UtilityBuilding : public Building {
     string type;
     Street* street;
 public:
-    UtilityBuilding(const string& n, const string& t, double cov, int lvl, int moneyCost, Street* st)
-        : Building(n, lvl, 3), coverage(cov), moneyCostPerUpgrade(moneyCost), type(t), street(st) {}
+    UtilityBuilding(const string& n, string t, double cov, int lvl, int moneyCost, Street* st)
+        : Building(n, lvl, 3), coverage(cov), moneyCostPerUpgrade(moneyCost), type(std::move(t)), street(st) {}
     double getCoverage() const { return coverage; }
     const string& getType() const { return type; }
     Street* getStreet() const { return street; }
@@ -143,7 +152,7 @@ class City {
     vector<UtilityBuilding> utilities;
     vector<Park> parks;
 public:
-    City(const string& n, int startingMoney = 0) : name(n), money(startingMoney) {}
+    explicit City(string n, int startingMoney = 0) : name(std::move(n)), money(startingMoney) {}
 
     void addStreet(const Street& s) { streets.push_back(s); }
     Street* getStreet(size_t idx) { return idx < streets.size() ? &streets[idx] : nullptr; }
@@ -164,7 +173,7 @@ public:
         for (const auto& r : residential) baseCap += r.getCapacity();
         double boost = 0.0;
         for (const auto& p : parks) boost += p.getBoost();
-        return baseCap * (1.0 + boost);
+        return baseCap * (1.0 + (boost / 100.0)); // Adjusted boost to be a percentage
     }
 
     bool utilitiesCoverPopulation() const {
@@ -176,12 +185,11 @@ public:
         return totalCoverage >= totalPopulation;
     }
 
-    // --- Funcții noi pentru limitarea tuturor clădirilor ---
+    // --- Functii pentru limitarea cladirilor ---
     int getMaxBuildings() const {
         int totalSegments = 0;
-        for (const auto* stPtr : {&streets}) {
-            for (const auto& s : *stPtr) totalSegments += s.getLength();
-        }
+        // The original code used a redundant pointer vector. Fixed to iterate over streets vector directly.
+        for (const auto& s : streets) totalSegments += s.getLength();
         return totalSegments * 2;
     }
 
@@ -215,20 +223,23 @@ int main() {
     int startingMoney;
     cout << "Enter starting money: ";
     cin >> startingMoney;
+    clearInputBuffer(); // <-- FIX: Clear buffer after reading int startingMoney
     City city(cityName, startingMoney);
 
     int numResources;
     cout << "Enter number of resource types: ";
     cin >> numResources;
+    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numResources
     for (int i = 0; i < numResources; ++i) {
         string resName; int resQty;
         cout << "Resource " << i+1 << " name: "; cin >> resName;
         cout << "Quantity: "; cin >> resQty;
-        city.addResource(resName, resQty);
+        // No buffer clear needed here because we are not immediately following with getline
     }
 
     int numStreets;
     cout << "Enter number of streets: "; cin >> numStreets;
+    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numStreets
     for (int i = 0; i < numStreets; ++i) {
         int lvl; cout << "Street " << i+1 << " level (1..3): "; cin >> lvl;
         Street s(lvl);
@@ -236,43 +247,47 @@ int main() {
         for (int j = 0; j < segCount; ++j) s.addSegment(j);
         city.addStreet(s);
     }
+    clearInputBuffer(); // <-- FIX: Clear buffer after the final street input
 
     int maxBuildings = city.getMaxBuildings();
     cout << "Maximum number of buildings allowed in city: " << maxBuildings << "\n";
 
-    // --- Adăugare clădiri rezidențiale ---
+    // Adaugare cladiri rezidentiale
     int numResidential;
     cout << "Enter number of residential buildings: "; cin >> numResidential;
+    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numResidential
     if (numResidential > city.getRemainingBuildingSlots()) {
         cout << "Warning: Cannot add " << numResidential
-             << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
+              << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
         numResidential = city.getRemainingBuildingSlots();
     }
-    cin.ignore();
+
     for (int i = 0; i < numResidential; ++i) {
         string resName;
-        cout << "Residential building " << i+1 << " name: "; getline(cin, resName);
+        cout << "Residential building " << i+1 << " name: "; getline(cin, resName); // Now reads correctly
         int cap; cout << "Capacity: "; cin >> cap;
         int moneyGain; cout << "Money gain per upgrade: "; cin >> moneyGain;
         int numResNeeded; cout << "Number of resource types needed for upgrade: "; cin >> numResNeeded;
+
         map<string,int> resNeeded;
         for (int r = 0; r < numResNeeded; ++r) {
             string rName; int rQty;
             cout << "  Resource " << r+1 << " name: "; cin >> rName;
             cout << "  Quantity: "; cin >> rQty;
-            resNeeded[rName] = rQty;
         }
+
         Street* stPtr = city.getStreet(0);
         city.addResidential(ResidentialBuilding(resName, cap, 1, resNeeded, moneyGain, stPtr));
-        cin.ignore();
+        clearInputBuffer(); // <-- FIX: Clear buffer after the final numerical input for this building
     }
 
-    // --- Adăugare clădiri utilitare ---
+    // Adaugare cladiri utilitare
     int numUtil;
     cout << "Enter number of utility buildings: "; cin >> numUtil;
+    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numUtil
     if (numUtil > city.getRemainingBuildingSlots()) {
         cout << "Warning: Cannot add " << numUtil
-             << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
+              << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
         numUtil = city.getRemainingBuildingSlots();
     }
     for (int i = 0; i < numUtil; ++i) {
@@ -283,14 +298,18 @@ int main() {
         cout << "Population coverage: "; cin >> cov;
         Street* stPtr = city.getStreet(0);
         city.addUtility(UtilityBuilding(utilName, utilType, cov, 1, 100, stPtr));
+        clearInputBuffer(); // <-- FIX: Clear buffer after the final numerical input for this building
     }
 
-    // --- Adăugare parc ---
+    // --- Adaugare parc ---
     cout << "Would you like to add a park? Y/N: ";
     char ans; cin >> ans;
+    // No clearInputBuffer() here, as it's followed by a float input, not a getline
+
     if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
         cout << "Enter population boost (%): ";
         float boost; cin >> boost;
+        clearInputBuffer(); // <-- FIX: Clear buffer after reading float boost
         Street* stPtr = city.getStreet(0);
         Park newPark("CentralPark", boost, 30, stPtr);
         city.addPark(newPark);
