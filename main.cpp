@@ -7,17 +7,12 @@
 #include <limits>
 
 using namespace std;
-
-// --- CONSTANT FOR SEGMENT LIMIT ---
+//adaugarea unei constante pentru a nu rula la infinit
 const int MAX_SEGMENTS = 10;
 
-// Forward declaration for robust input clearing
 void clearInputBuffer() {
-    // Clear the input buffer of any leftover characters, including the newline
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
-
-// ... (Class definitions for Street, Building, ResidentialBuilding, UtilityBuilding, Park, and City remain unchanged)
 
 class Street {
     vector<int> segments;
@@ -222,8 +217,6 @@ public:
     }
 };
 
-
-// --- FULLY CORRECTED MAIN FUNCTION ---
 int main() {
     cout << " City builder \n";
 
@@ -231,13 +224,13 @@ int main() {
     cout << "Enter city name: ";
     getline(cin, cityName);
 
-    int startingMoney = 0; // Initialized to prevent Valgrind errors
+    int startingMoney = 0;
     cout << "Enter starting money: ";
     cin >> startingMoney;
     clearInputBuffer();
     City city(cityName, startingMoney);
 
-    int numResources = 0; // Initialized to prevent Valgrind errors
+    int numResources = 0;
     cout << "Enter number of resource types: ";
     cin >> numResources;
     clearInputBuffer();
@@ -247,7 +240,7 @@ int main() {
         cout << "Quantity: "; cin >> resQty;
     }
 
-    int numStreets = 0; // Initialized to prevent Valgrind errors
+    int numStreets = 0;
     cout << "Enter number of streets: "; cin >> numStreets;
     clearInputBuffer();
     for (int i = 0; i < numStreets; ++i) {
@@ -257,8 +250,6 @@ int main() {
 
         cout << "Number of segments (Max " << MAX_SEGMENTS << "): ";
         cin >> segCount;
-
-        // Clamp the segment count to the maximum allowed (MAX_SEGMENTS = 10)
         segCount = min(segCount, MAX_SEGMENTS);
 
         for (int j = 0; j < segCount; ++j) s.addSegment(j);
@@ -299,7 +290,7 @@ int main() {
     }
 
     // Adaugare cladiri utilitare
-    int numUtil = 0; // Initialized to prevent Valgrind errors
+    int numUtil = 0;
     cout << "Enter number of utility buildings: "; cin >> numUtil;
     clearInputBuffer();
     if (numUtil > city.getRemainingBuildingSlots()) {
@@ -310,7 +301,7 @@ int main() {
     for (int i = 0; i < numUtil; ++i) {
         string utilName, utilType;
         cout << "\nUtility building name: "; cin >> utilName;
-        cout << "Type (e.g. Water, Power): "; cin >> utilType;
+        cout << "Type: "; cin >> utilType;
         int cov;
         cout << "Population coverage: "; cin >> cov;
         Street* stPtr = city.getStreet(0);
@@ -320,7 +311,7 @@ int main() {
 
     // --- Adaugare parc ---
     cout << "Would you like to add a park? Y/N: ";
-    char ans = 'N'; // Initialized to prevent Valgrind errors
+    char ans = 'N';
     cin >> ans;
 
     if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
