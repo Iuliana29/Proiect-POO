@@ -77,7 +77,6 @@ public:
     bool upgrade(map<string,int>& cityResources, int& money) {
         if (level >= maxLevel) return false;
 
-        // verificăm resursele
         for (auto& [resType, qty] : resourcesNeeded) {
             if (cityResources[resType] < qty) {
                 cout << "Not enough " << resType << " for upgrade of " << name << "\n";
@@ -85,7 +84,6 @@ public:
             }
         }
 
-        // scădem resursele
         for (auto& [resType, qty] : resourcesNeeded) {
             cityResources[resType] -= qty;
             cout << "Used " << qty << " " << resType << " for upgrade of " << name << "\n";
@@ -133,11 +131,15 @@ public:
 
 class Park : public Building {
     double populationBoost;
+    int moneyCost;
     Street* street;
 public:
-    Park(const string& n, double boost, int moneyCost, Street* st)
-        : Building(n), populationBoost(boost), street(st) {}
+    Park(const string& n, double boost, int mCost, Street* st)
+        : Building(n), populationBoost(boost), moneyCost(mCost), street(st) {}
+
     double getBoost() const { return populationBoost; }
+    int getCost() const { return moneyCost; }
+
     friend ostream& operator<<(ostream& os, const Park& p) {
         os << "Park(" << static_cast<const Building&>(p)
            << ", boost=" << (p.getBoost() / 100.0) << "%"
@@ -161,7 +163,18 @@ public:
     Street* getStreet(size_t idx) { return idx < streets.size() ? &streets[idx] : nullptr; }
     void addResidential(const ResidentialBuilding& b) { residential.push_back(b); }
     void addUtility(const UtilityBuilding& b) { utilities.push_back(b); }
-    void addPark(const Park& p) { parks.push_back(p); }
+
+    // Modificat: parcurile scad banii automat
+    bool addPark(const Park& p) {
+        if (money < p.getCost()) {
+            cout << "Not enough money to build park " << p.getName() << "\n";
+            return false;
+        }
+        money -= p.getCost();
+        parks.push_back(p);
+        cout << "Park " << p.getName() << " added. Money left: " << money << "\n";
+        return true;
+    }
 
     void addResource(const string& type, int amount) { cityResources[type] += amount; }
     int getMoney() const { return money; }
@@ -178,17 +191,15 @@ public:
         for (const auto& p : parks) boost += p.getBoost();
         return baseCap * (1.0 + boost);
     }
+
     bool utilitiesCoverPopulation() const {
         double totalCoverage = 0.0;
-        for (const auto& u : utilities) {
-            totalCoverage += u.getCoverage();
-        }
+        for (const auto& u : utilities) totalCoverage += u.getCoverage();
         double totalPopulation = calculateTotalPopulation();
         cout << "Total population: " << totalPopulation << "\n";
         cout << "Total utility coverage: " << totalCoverage << "\n";
         return totalCoverage >= totalPopulation;
     }
-
 
     friend ostream& operator<<(ostream& os, const City& c) {
         os << "City: " << c.name << " (Money=" << c.money << ")\nResources:\n";
@@ -261,8 +272,10 @@ int main() {
         city.addResidential(ResidentialBuilding(resName, cap, 0.5, 1, resNeeded, moneyGain, stPtr));
         cin.ignore();
     }
+
+    // --- Utilități ---
     int numUtil;
-    cout<<"Enter amount of utility buildings: ";
+    cout << "Enter amount of utility buildings: ";
     cin >> numUtil;
     for (int i = 0; i < numUtil; ++i) {
         string utilName, utilType;
@@ -277,17 +290,16 @@ int main() {
         city.addUtility(UtilityBuilding(utilName, utilType, cov, 1, 100, stPtr));
     }
 
-    cout<<"Would you like to add a park? Y/N";
+    // --- Adăugare parc cu scădere bani ---
+    cout << "Would you like to add a park? Y/N: ";
     char ans;
-    cin>>ans;
-    if (ans=='Y') {
-        // Adăugare parc
-        cout<<"Enter population boost: %";
-        float boost;
-        cin >> boost;
-        cout << "\nAdding a small park \n";
+    cin >> ans;
+    if (ans == 'Y' || ans == 'y') {
+        cout << "Enter population boost (%): ";
+        float boost; cin >> boost;
         Street* stPtr = city.getStreet(1);
-        city.addPark(Park("CentralPark", boost, 30, stPtr));
+        Park newPark("CentralPark", boost, 30, stPtr);
+        city.addPark(newPark); // scade automat banii
     }
 
     cout << "\n=== INITIAL CITY STATE ===\n";
@@ -307,5 +319,6 @@ int main() {
     } else {
         cout << "Warning: Not all population is covered by utilities!\n";
     }
+
     return 0;
 }
