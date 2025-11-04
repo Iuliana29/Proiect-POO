@@ -13,15 +13,17 @@ const int MAX_SEGMENTS = 10;
 
 // Forward declaration for robust input clearing
 void clearInputBuffer() {
+    // Clear the input buffer of any leftover characters, including the newline
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
+
+// ... (Class definitions for Street, Building, ResidentialBuilding, UtilityBuilding, Park, and City remain unchanged)
 
 class Street {
     vector<int> segments;
     int level;
 public:
     explicit Street(int lvl = 1) : level(max(1, min(3, lvl))) {}
-    // Modified addSegment to check the limit
     bool addSegment(const int& seg) {
         if (segments.size() < MAX_SEGMENTS) {
             segments.push_back(seg);
@@ -220,7 +222,8 @@ public:
     }
 };
 
-// --- MAIN FUNCTION ---
+
+// --- FULLY CORRECTED MAIN FUNCTION ---
 int main() {
     cout << " City builder \n";
 
@@ -228,13 +231,13 @@ int main() {
     cout << "Enter city name: ";
     getline(cin, cityName);
 
-    int startingMoney;
+    int startingMoney = 0; // Initialized to prevent Valgrind errors
     cout << "Enter starting money: ";
     cin >> startingMoney;
     clearInputBuffer();
     City city(cityName, startingMoney);
 
-    int numResources;
+    int numResources = 0; // Initialized to prevent Valgrind errors
     cout << "Enter number of resource types: ";
     cin >> numResources;
     clearInputBuffer();
@@ -244,7 +247,7 @@ int main() {
         cout << "Quantity: "; cin >> resQty;
     }
 
-    int numStreets;
+    int numStreets = 0; // Initialized to prevent Valgrind errors
     cout << "Enter number of streets: "; cin >> numStreets;
     clearInputBuffer();
     for (int i = 0; i < numStreets; ++i) {
@@ -252,11 +255,10 @@ int main() {
         Street s(lvl);
         int segCount;
 
-        // --- MODIFIED INPUT LOGIC ---
         cout << "Number of segments (Max " << MAX_SEGMENTS << "): ";
         cin >> segCount;
 
-        // Clamp the segment count to the maximum allowed
+        // Clamp the segment count to the maximum allowed (MAX_SEGMENTS = 10)
         segCount = min(segCount, MAX_SEGMENTS);
 
         for (int j = 0; j < segCount; ++j) s.addSegment(j);
@@ -268,7 +270,7 @@ int main() {
     cout << "Maximum number of buildings allowed in city: " << maxBuildings << "\n";
 
     // Adaugare cladiri rezidentiale
-    int numResidential;
+    int numResidential = 0; // Initialized to prevent Valgrind errors
     cout << "Enter number of residential buildings: "; cin >> numResidential;
     clearInputBuffer();
     if (numResidential > city.getRemainingBuildingSlots()) {
@@ -297,7 +299,7 @@ int main() {
     }
 
     // Adaugare cladiri utilitare
-    int numUtil;
+    int numUtil = 0; // Initialized to prevent Valgrind errors
     cout << "Enter number of utility buildings: "; cin >> numUtil;
     clearInputBuffer();
     if (numUtil > city.getRemainingBuildingSlots()) {
@@ -318,7 +320,8 @@ int main() {
 
     // --- Adaugare parc ---
     cout << "Would you like to add a park? Y/N: ";
-    char ans; cin >> ans;
+    char ans = 'N'; // Initialized to prevent Valgrind errors
+    cin >> ans;
 
     if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
         cout << "Enter population boost (%): ";
