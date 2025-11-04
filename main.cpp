@@ -4,12 +4,14 @@
 #include <string>
 #include <map>
 #include <algorithm>
-#include <limits> // <-- Added for robust input clearing
+#include <limits>
 
 using namespace std;
 
-// Forward declaration needed for the robust cin.ignore fix
-// Used to clear the input buffer of any leftover characters, including the newline
+// --- CONSTANT FOR SEGMENT LIMIT ---
+const int MAX_SEGMENTS = 10;
+
+// Forward declaration for robust input clearing
 void clearInputBuffer() {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 }
@@ -19,7 +21,14 @@ class Street {
     int level;
 public:
     explicit Street(int lvl = 1) : level(max(1, min(3, lvl))) {}
-    void addSegment(const int& seg) { segments.push_back(seg); }
+    // Modified addSegment to check the limit
+    bool addSegment(const int& seg) {
+        if (segments.size() < MAX_SEGMENTS) {
+            segments.push_back(seg);
+            return true;
+        }
+        return false;
+    }
     int getLength() const { return static_cast<int>(segments.size()); }
     int getLevel() const { return level; }
     string getRoadType() const {
@@ -173,7 +182,7 @@ public:
         for (const auto& r : residential) baseCap += r.getCapacity();
         double boost = 0.0;
         for (const auto& p : parks) boost += p.getBoost();
-        return baseCap * (1.0 + (boost / 100.0)); // Adjusted boost to be a percentage
+        return baseCap * (1.0 + (boost / 100.0));
     }
 
     bool utilitiesCoverPopulation() const {
@@ -185,10 +194,8 @@ public:
         return totalCoverage >= totalPopulation;
     }
 
-    // --- Functii pentru limitarea cladirilor ---
     int getMaxBuildings() const {
         int totalSegments = 0;
-        // The original code used a redundant pointer vector. Fixed to iterate over streets vector directly.
         for (const auto& s : streets) totalSegments += s.getLength();
         return totalSegments * 2;
     }
@@ -213,6 +220,7 @@ public:
     }
 };
 
+// --- MAIN FUNCTION ---
 int main() {
     cout << " City builder \n";
 
@@ -223,31 +231,38 @@ int main() {
     int startingMoney;
     cout << "Enter starting money: ";
     cin >> startingMoney;
-    clearInputBuffer(); // <-- FIX: Clear buffer after reading int startingMoney
+    clearInputBuffer();
     City city(cityName, startingMoney);
 
     int numResources;
     cout << "Enter number of resource types: ";
     cin >> numResources;
-    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numResources
+    clearInputBuffer();
     for (int i = 0; i < numResources; ++i) {
         string resName; int resQty;
         cout << "Resource " << i+1 << " name: "; cin >> resName;
         cout << "Quantity: "; cin >> resQty;
-        // No buffer clear needed here because we are not immediately following with getline
     }
 
     int numStreets;
     cout << "Enter number of streets: "; cin >> numStreets;
-    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numStreets
+    clearInputBuffer();
     for (int i = 0; i < numStreets; ++i) {
         int lvl; cout << "Street " << i+1 << " level (1..3): "; cin >> lvl;
         Street s(lvl);
-        int segCount; cout << "Number of segments: "; cin >> segCount;
+        int segCount;
+
+        // --- MODIFIED INPUT LOGIC ---
+        cout << "Number of segments (Max " << MAX_SEGMENTS << "): ";
+        cin >> segCount;
+
+        // Clamp the segment count to the maximum allowed
+        segCount = min(segCount, MAX_SEGMENTS);
+
         for (int j = 0; j < segCount; ++j) s.addSegment(j);
         city.addStreet(s);
     }
-    clearInputBuffer(); // <-- FIX: Clear buffer after the final street input
+    clearInputBuffer();
 
     int maxBuildings = city.getMaxBuildings();
     cout << "Maximum number of buildings allowed in city: " << maxBuildings << "\n";
@@ -255,7 +270,7 @@ int main() {
     // Adaugare cladiri rezidentiale
     int numResidential;
     cout << "Enter number of residential buildings: "; cin >> numResidential;
-    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numResidential
+    clearInputBuffer();
     if (numResidential > city.getRemainingBuildingSlots()) {
         cout << "Warning: Cannot add " << numResidential
               << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
@@ -264,7 +279,7 @@ int main() {
 
     for (int i = 0; i < numResidential; ++i) {
         string resName;
-        cout << "Residential building " << i+1 << " name: "; getline(cin, resName); // Now reads correctly
+        cout << "Residential building " << i+1 << " name: "; getline(cin, resName);
         int cap; cout << "Capacity: "; cin >> cap;
         int moneyGain; cout << "Money gain per upgrade: "; cin >> moneyGain;
         int numResNeeded; cout << "Number of resource types needed for upgrade: "; cin >> numResNeeded;
@@ -278,13 +293,13 @@ int main() {
 
         Street* stPtr = city.getStreet(0);
         city.addResidential(ResidentialBuilding(resName, cap, 1, resNeeded, moneyGain, stPtr));
-        clearInputBuffer(); // <-- FIX: Clear buffer after the final numerical input for this building
+        clearInputBuffer();
     }
 
     // Adaugare cladiri utilitare
     int numUtil;
     cout << "Enter number of utility buildings: "; cin >> numUtil;
-    clearInputBuffer(); // <-- FIX: Clear buffer after reading int numUtil
+    clearInputBuffer();
     if (numUtil > city.getRemainingBuildingSlots()) {
         cout << "Warning: Cannot add " << numUtil
               << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
@@ -298,18 +313,17 @@ int main() {
         cout << "Population coverage: "; cin >> cov;
         Street* stPtr = city.getStreet(0);
         city.addUtility(UtilityBuilding(utilName, utilType, cov, 1, 100, stPtr));
-        clearInputBuffer(); // <-- FIX: Clear buffer after the final numerical input for this building
+        clearInputBuffer();
     }
 
     // --- Adaugare parc ---
     cout << "Would you like to add a park? Y/N: ";
     char ans; cin >> ans;
-    // No clearInputBuffer() here, as it's followed by a float input, not a getline
 
     if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
         cout << "Enter population boost (%): ";
         float boost; cin >> boost;
-        clearInputBuffer(); // <-- FIX: Clear buffer after reading float boost
+        clearInputBuffer();
         Street* stPtr = city.getStreet(0);
         Park newPark("CentralPark", boost, 30, stPtr);
         city.addPark(newPark);
