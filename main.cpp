@@ -21,18 +21,6 @@ public:
         default: return "Unknown";
         }
     }
-    int upgradeCost() const {
-        if (level == 1) return 50;
-        if (level == 2) return 100;
-        return -1;
-    }
-    bool upgradeRoad(int& money) {
-        int cost = upgradeCost();
-        if (cost == -1 || money < cost) return false;
-        money -= cost;
-        level = min(3, level + 1);
-        return true;
-    }
     friend ostream& operator<<(ostream& os, const Street& s) {
         os << "Street(segments=" << s.segments.size()
            << ", type=" << s.getRoadType() << ")";
@@ -57,7 +45,6 @@ public:
     }
 };
 
-// --- ResidentialBuilding cu resurse ---
 class ResidentialBuilding : public Building {
     int capacity;
     map<string,int> resourcesNeeded;
@@ -162,18 +149,7 @@ public:
     Street* getStreet(size_t idx) { return idx < streets.size() ? &streets[idx] : nullptr; }
     void addResidential(const ResidentialBuilding& b) { residential.push_back(b); }
     void addUtility(const UtilityBuilding& b) { utilities.push_back(b); }
-
-    // Modificat: parcurile scad banii automat
-    bool addPark(const Park& p) {
-        if (money < p.getCost()) {
-            cout << "Not enough money to build park " << p.getName() << "\n";
-            return false;
-        }
-        money -= p.getCost();
-        parks.push_back(p);
-        cout << "Park " << p.getName() << " added. Money left: " << money << "\n";
-        return true;
-    }
+    void addPark(const Park& p) { parks.push_back(p); money -= p.getCost(); }
 
     void addResource(const string& type, int amount) { cityResources[type] += amount; }
     int getMoney() const { return money; }
@@ -200,6 +176,20 @@ public:
         return totalCoverage >= totalPopulation;
     }
 
+    // --- Funcții noi pentru limitarea tuturor clădirilor ---
+    int getMaxBuildings() const {
+        int totalSegments = 0;
+        for (const auto* stPtr : {&streets}) {
+            for (const auto& s : *stPtr) totalSegments += s.getLength();
+        }
+        return totalSegments * 2;
+    }
+
+    int getRemainingBuildingSlots() const {
+        int totalBuildings = static_cast<int>(residential.size() + utilities.size() + parks.size());
+        return getMaxBuildings() - totalBuildings;
+    }
+
     friend ostream& operator<<(ostream& os, const City& c) {
         os << "City: " << c.name << " (Money=" << c.money << ")\nResources:\n";
         for (auto& [res, qty] : c.cityResources) os << "  " << res << ": " << qty << "\n";
@@ -215,7 +205,6 @@ public:
     }
 };
 
-// --- Main cu citire de la tastatura ---
 int main() {
     cout << "=== City builder ===\n";
 
@@ -228,7 +217,6 @@ int main() {
     cin >> startingMoney;
     City city(cityName, startingMoney);
 
-    // --- Resurse oraș ---
     int numResources;
     cout << "Enter number of resource types: ";
     cin >> numResources;
@@ -239,7 +227,6 @@ int main() {
         city.addResource(resName, resQty);
     }
 
-    // --- Străzi ---
     int numStreets;
     cout << "Enter number of streets: "; cin >> numStreets;
     for (int i = 0; i < numStreets; ++i) {
@@ -250,9 +237,17 @@ int main() {
         city.addStreet(s);
     }
 
-    // --- Clădiri rezidențiale ---
+    int maxBuildings = city.getMaxBuildings();
+    cout << "Maximum number of buildings allowed in city: " << maxBuildings << "\n";
+
+    // --- Adăugare clădiri rezidențiale ---
     int numResidential;
     cout << "Enter number of residential buildings: "; cin >> numResidential;
+    if (numResidential > city.getRemainingBuildingSlots()) {
+        cout << "Warning: Cannot add " << numResidential
+             << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
+        numResidential = city.getRemainingBuildingSlots();
+    }
     cin.ignore();
     for (int i = 0; i < numResidential; ++i) {
         string resName;
@@ -267,38 +262,41 @@ int main() {
             cout << "  Quantity: "; cin >> rQty;
             resNeeded[rName] = rQty;
         }
-        Street* stPtr = city.getStreet(1);
+        Street* stPtr = city.getStreet(0);
         city.addResidential(ResidentialBuilding(resName, cap, 1, resNeeded, moneyGain, stPtr));
         cin.ignore();
     }
 
-    // --- Utilități ---
+    // --- Adăugare clădiri utilitare ---
     int numUtil;
-    cout << "Enter amount of utility buildings: ";
-    cin >> numUtil;
+    cout << "Enter number of utility buildings: "; cin >> numUtil;
+    if (numUtil > city.getRemainingBuildingSlots()) {
+        cout << "Warning: Cannot add " << numUtil
+             << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
+        numUtil = city.getRemainingBuildingSlots();
+    }
     for (int i = 0; i < numUtil; ++i) {
         string utilName, utilType;
-        cout << "\nUtility building name: ";
-        cin >> utilName;
-        cout << "Type (e.g. Water, Power): ";
-        cin >> utilType;
+        cout << "\nUtility building name: "; cin >> utilName;
+        cout << "Type (e.g. Water, Power): "; cin >> utilType;
         int cov;
-        cout << "Population coverage: ";
-        cin >> cov;
-        Street* stPtr = city.getStreet(1);
+        cout << "Population coverage: "; cin >> cov;
+        Street* stPtr = city.getStreet(0);
         city.addUtility(UtilityBuilding(utilName, utilType, cov, 1, 100, stPtr));
     }
 
-    // --- Adăugare parc cu scădere bani ---
+    // --- Adăugare parc ---
     cout << "Would you like to add a park? Y/N: ";
-    char ans;
-    cin >> ans;
-    if (ans == 'Y' || ans == 'y') {
+    char ans; cin >> ans;
+    if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
         cout << "Enter population boost (%): ";
         float boost; cin >> boost;
-        Street* stPtr = city.getStreet(1);
+        Street* stPtr = city.getStreet(0);
         Park newPark("CentralPark", boost, 30, stPtr);
-        city.addPark(newPark); // scade automat banii
+        city.addPark(newPark);
+        cout << "Park added. Remaining building slots: " << city.getRemainingBuildingSlots() << "\n";
+    } else if (city.getRemainingBuildingSlots() <= 0) {
+        cout << "Cannot add park: no remaining building slots.\n";
     }
 
     cout << "\n=== INITIAL CITY STATE ===\n";
