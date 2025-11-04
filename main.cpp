@@ -206,7 +206,7 @@ public:
 };
 
 int main() {
-    cout << "=== City builder ===\n";
+    cout << " City builder \n";
 
     string cityName;
     cout << "Enter city name: ";
