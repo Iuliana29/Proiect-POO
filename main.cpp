@@ -1,347 +1,70 @@
 #include <iostream>
-#include <utility>
-#include <vector>
-#include <string>
 #include <map>
-#include <algorithm>
-#include <limits>
+#include <string>
 
-using namespace std;
-//adaugarea unei constante pentru a nu rula la infinit
-const int MAX_SEGMENTS = 10;
-
-void clearInputBuffer() {
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-}
-
-class Street {
-    vector<int> segments;
-    int level;
-public:
-    explicit Street(int lvl = 1) : level(max(1, min(3, lvl))) {}
-    bool addSegment(const int& seg) {
-        if (segments.size() < MAX_SEGMENTS) {
-            segments.push_back(seg);
-            return true;
-        }
-        return false;
-    }
-    [[nodiscard]] int getLength() const { return static_cast<int>(segments.size()); }
-    [[nodiscard]] int getLevel() const { return level; }
-    [[nodiscard]] string getRoadType() const {
-        switch (level) {
-        case 1: return "Two lane road";
-        case 2: return "Four lane road";
-        case 3: return "Six lane road";
-        default: return "Unknown";
-        }
-    }
-    friend ostream& operator<<(ostream& os, const Street& s) {
-        os << "Street(segments=" << s.segments.size()
-           << ", type=" << s.getRoadType() << ")";
-        return os;
-    }
-};
-
-class Building {
-protected:
-    string name;
-    int level;
-    int maxLevel;
-public:
-    explicit Building(string n = "Building", int lvl = 1, int maxL = 3)
-        : name(std::move(n)), level(max(1, min(maxL, lvl))), maxLevel(maxL) {}
-    [[nodiscard]] const string& getName() const { return name; }
-    [[nodiscard]] int getLevel() const { return level; }
-    [[nodiscard]] int getMaxLevel() const { return maxLevel; }
-    friend ostream& operator<<(ostream& os, const Building& b) {
-        os << "Building(name=" << b.name << ", level=" << b.level << ")";
-        return os;
-    }
-};
-
-class ResidentialBuilding : public Building {
-    int capacity;
-    map<string,int> resourcesNeeded;
-    int moneyProducedPerUpgrade;
-    Street* street;
-public:
-    ResidentialBuilding(const string& n, int cap, int lvl,
-                        const map<string,int>& resNeeded, int moneyGain, Street* st)
-        : Building(n, lvl, 3), capacity(cap),
-          resourcesNeeded(resNeeded), moneyProducedPerUpgrade(moneyGain), street(st) {}
-
-    [[nodiscard]] int getCapacity() const { return capacity * level; }
-    [[nodiscard]] const map<string,int>& getResourcesNeeded() const { return resourcesNeeded; }
-    [[nodiscard]] Street* getStreet() const { return street; }
-
-    bool upgrade(map<string,int>& cityResources, int& money) {
-        if (level >= maxLevel) return false;
-
-        for (auto& [resType, qty] : resourcesNeeded) {
-            if (cityResources[resType] < qty) {
-                cout << "Not enough " << resType << " for upgrade of " << name << "\n";
-                return false;
-            }
-        }
-
-        for (auto& [resType, qty] : resourcesNeeded) {
-            cityResources[resType] -= qty;
-            cout << "Used " << qty << " " << resType << " for upgrade of " << name << "\n";
-        }
-
-        level++;
-        money += moneyProducedPerUpgrade;
-        cout << name << " upgraded to level " << level << " (+$" << moneyProducedPerUpgrade << ")\n";
-        return true;
-    }
-
-    friend ostream& operator<<(ostream& os, const ResidentialBuilding& r) {
-        os << "Residential(" << static_cast<const Building&>(r)
-           << ", capacity=" << r.getCapacity()
-           << ", street=" << (r.street ? *r.street : Street()) << ")";
-        return os;
-    }
-};
-
-class UtilityBuilding : public Building {
-    double coverage;
-    int moneyCostPerUpgrade;
-    string type;
-    Street* street;
-public:
-    UtilityBuilding(const string& n, string t, double cov, int lvl, int moneyCost, Street* st)
-        : Building(n, lvl, 3), coverage(cov), moneyCostPerUpgrade(moneyCost), type(std::move(t)), street(st) {}
-    [[nodiscard]] double getCoverage() const { return coverage; }
-    [[nodiscard]] const string& getType() const { return type; }
-    [[nodiscard]] Street* getStreet() const { return street; }
-    bool upgrade(int& money) {
-        if (level >= maxLevel || money < moneyCostPerUpgrade) return false;
-        money -= moneyCostPerUpgrade;
-        level++;
-        return true;
-    }
-    friend ostream& operator<<(ostream& os, const UtilityBuilding& u) {
-        os << "Utility(" << static_cast<const Building&>(u)
-           << ", type=" << u.type
-           << ", coverage=" << u.getCoverage()
-           << ", street=" << (u.street ? *u.street : Street()) << ")";
-        return os;
-    }
-};
-
-class Park : public Building {
-    double populationBoost;
-    int moneyCost;
-    Street* street;
-public:
-    Park(const string& n, double boost, int mCost, Street* st)
-        : Building(n), populationBoost(boost), moneyCost(mCost), street(st) {}
-
-    [[nodiscard]] double getBoost() const { return populationBoost; }
-    [[nodiscard]] int getCost() const { return moneyCost; }
-
-    friend ostream& operator<<(ostream& os, const Park& p) {
-        os << "Park(" << static_cast<const Building&>(p)
-           << ", boost=" << (p.getBoost() / 100.0) << "%"
-           << ", street=" << (p.street ? *p.street : Street()) << ")";
-        return os;
-    }
-};
-
-class City {
-    string name;
-    int money;
-    map<string,int> cityResources;
-    vector<Street> streets;
-    vector<ResidentialBuilding> residential;
-    vector<UtilityBuilding> utilities;
-    vector<Park> parks;
-public:
-    explicit City(string n, int startingMoney = 0) : name(std::move(n)), money(startingMoney) {}
-
-    void addStreet(const Street& s) { streets.push_back(s); }
-    Street* getStreet(size_t idx) { return idx < streets.size() ? &streets[idx] : nullptr; }
-    void addResidential(const ResidentialBuilding& b) { residential.push_back(b); }
-    void addUtility(const UtilityBuilding& b) { utilities.push_back(b); }
-    void addPark(const Park& p) { parks.push_back(p); money -= p.getCost(); }
-
-    void addResource(const string& type, int amount) { cityResources[type] += amount; }
-    [[nodiscard]] int getMoney() const { return money; }
-
-    void upgradeAllResidential() {
-        for (auto& r : residential)
-            r.upgrade(cityResources, money);
-    }
-
-    [[nodiscard]] double calculateTotalPopulation() const {
-        int baseCap = 0;
-        for (const auto& r : residential) baseCap += r.getCapacity();
-        double boost = 0.0;
-        for (const auto& p : parks) boost += p.getBoost();
-        return baseCap * (1.0 + (boost / 100.0));
-    }
-
-    [[nodiscard]] bool utilitiesCoverPopulation() const {
-        double totalCoverage = 0.0;
-        for (const auto& u : utilities) totalCoverage += u.getCoverage();
-        double totalPopulation = calculateTotalPopulation();
-        cout << "Total population: " << totalPopulation << "\n";
-        cout << "Total utility coverage: " << totalCoverage << "\n";
-        return totalCoverage >= totalPopulation;
-    }
-
-    [[nodiscard]] int getMaxBuildings() const {
-        int totalSegments = 0;
-        for (const auto& s : streets) totalSegments += s.getLength();
-        return totalSegments * 2;
-    }
-
-    [[nodiscard]] int getRemainingBuildingSlots() const {
-        int totalBuildings = static_cast<int>(residential.size() + utilities.size() + parks.size());
-        return getMaxBuildings() - totalBuildings;
-    }
-
-    friend ostream& operator<<(ostream& os, const City& c) {
-        os << "City: " << c.name << " (Money=" << c.money << ")\nResources:\n";
-        for (auto& [res, qty] : c.cityResources) os << "  " << res << ": " << qty << "\n";
-        os << "Streets:\n";
-        for (size_t i = 0; i < c.streets.size(); ++i) os << "  [" << i << "] " << c.streets[i] << "\n";
-        os << "Residential:\n";
-        for (size_t i = 0; i < c.residential.size(); ++i) os << "  [" << i << "] " << c.residential[i] << "\n";
-        os << "Utilities:\n";
-        for (size_t i = 0; i < c.utilities.size(); ++i) os << "  [" << i << "] " << c.utilities[i] << "\n";
-        os << "Parks:\n";
-        for (size_t i = 0; i < c.parks.size(); ++i) os << "  [" << i << "] " << c.parks[i] << "\n";
-        return os;
-    }
-};
+#include "City.hpp"
+#include "Building.hpp"
+#include "Exceptions.hpp"
 
 int main() {
-    cout << " City builder \n";
+    try {
+        City city("RefactoredCity", 100);
 
-    string cityName;
-    cout << "Enter city name: ";
-    getline(cin, cityName);
+        Street s1(2);
+        s1.addSegment(1);
+        s1.addSegment(2);
+        city.addStreet(s1);
 
-    int startingMoney = 0;
-    cout << "Enter starting money: ";
-    cin >> startingMoney;
-    clearInputBuffer();
-    City city(cityName, startingMoney);
+        Street s2(1);
+        s2.addSegment(1);
+        city.addStreet(s2);
 
-    int numResources = 0;
-    cout << "Enter number of resource types: ";
-    cin >> numResources;
-    clearInputBuffer();
-    for (int i = 0; i < numResources; ++i) {
-        string resName; int resQty;
-        cout << "Resource " << i+1 << " name: "; cin >> resName;
-        cout << "Quantity: "; cin >> resQty;
-    }
 
-    int numStreets = 0;
-    cout << "Enter number of streets: "; cin >> numStreets;
-    clearInputBuffer();
-    for (int i = 0; i < numStreets; ++i) {
-        int lvl; cout << "Street " << i+1 << " level (1..3): "; cin >> lvl;
-        Street s(lvl);
-        int segCount;
+        city.addResource("wood", 50);
+        city.addResource("stone", 30);
 
-        cout << "Number of segments (Max " << MAX_SEGMENTS << "): ";
-        cin >> segCount;
-        segCount = min(segCount, MAX_SEGMENTS);
+        city.addBuilding("residential", "Home", {"10","1","20"}, 0);
+        city.addBuilding("utility", "WaterPlant", {"Water","100","1","50"}, 0);
+        city.addBuilding("park", "CentralPark", {"15.0","30"}, 0);
+        city.addBuilding("commercial", "Mall", {"60","1"}, 1);
 
-        for (int j = 0; j < segCount; ++j) s.addSegment(j);
-        city.addStreet(s);
-    }
-    clearInputBuffer();
+        std::cout << "--- INITIAL CITY STATE ---\n";
+        city.printSummary();
 
-    int maxBuildings = city.getMaxBuildings();
-    cout << "Maximum number of buildings allowed in city: " << maxBuildings << "\n";
+        std::cout << "\n--- Upgrading all buildings (polymorphic calls) ---\n";
+        city.upgradeAllBuildings();
 
-    // Adaugare cladiri rezidentiale
-    int numResidential = 0; // Initialized to prevent Valgrind errors
-    cout << "Enter number of residential buildings: "; cin >> numResidential;
-    clearInputBuffer();
-    if (numResidential > city.getRemainingBuildingSlots()) {
-        cout << "Warning: Cannot add " << numResidential
-              << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
-        numResidential = city.getRemainingBuildingSlots();
-    }
+        std::cout << "\n--- CITY STATE AFTER UPGRADES ---\n";
+        city.printSummary();
 
-    for (int i = 0; i < numResidential; ++i) {
-        string resName;
-        cout << "Residential building " << i+1 << " name: "; getline(cin, resName);
-        int cap; cout << "Capacity: "; cin >> cap;
-        int moneyGain; cout << "Money gain per upgrade: "; cin >> moneyGain;
-        int numResNeeded; cout << "Number of resource types needed for upgrade: "; cin >> numResNeeded;
+        std::cout << "Total capacity: " << city.totalCapacity() << "\n";
 
-        map<string,int> resNeeded;
-        for (int r = 0; r < numResNeeded; ++r) {
-            string rName; int rQty;
-            cout << "  Resource " << r+1 << " name: "; cin >> rName;
-            cout << "  Quantity: "; cin >> rQty;
-        }
+        // exemplu cu Block
+        std::map<std::string,int> extraRes{{"wood",5},{"stone",2}};
+        int extraMoney = 50;
+        Block b1(std::make_shared<ResidentialBuilding>(
+            "BlockHome", 5, 1, std::map<std::string,int>{{"wood",5},{"stone",2}},
+            10, city.getStreet(0)));
 
-        Street* stPtr = city.getStreet(0);
-        city.addResidential(ResidentialBuilding(resName, cap, 1, resNeeded, moneyGain, stPtr));
-        clearInputBuffer();
-    }
+        std::cout << "\nBlock info: ";
+        b1.show(std::cout);
+        std::cout << "\nBlock capacity: " << b1.capacity() << "\n";
 
-    // Adaugare cladiri utilitare
-    int numUtil = 0;
-    cout << "Enter number of utility buildings: "; cin >> numUtil;
-    clearInputBuffer();
-    if (numUtil > city.getRemainingBuildingSlots()) {
-        cout << "Warning: Cannot add " << numUtil
-              << " buildings. Remaining slots: " << city.getRemainingBuildingSlots() << "\n";
-        numUtil = city.getRemainingBuildingSlots();
-    }
-    for (int i = 0; i < numUtil; ++i) {
-        string utilName, utilType;
-        cout << "\nUtility building name: "; cin >> utilName;
-        cout << "Type: "; cin >> utilType;
-        int cov;
-        cout << "Population coverage: "; cin >> cov;
-        Street* stPtr = city.getStreet(0);
-        city.addUtility(UtilityBuilding(utilName, utilType, cov, 1, 100, stPtr));
-        clearInputBuffer();
-    }
+        b1.upgradeBlock(extraRes, extraMoney);
+        std::cout << "After upgrade, block capacity: " << b1.capacity()
+                  << ", extraMoney=" << extraMoney << "\n";
 
-    // --- Adaugare parc ---
-    cout << "Would you like to add a park? Y/N: ";
-    char ans = 'N';
-    cin >> ans;
+        City other = city; // deep copy
+        other.setMoney(500);
+        std::cout << "\n--- COPIED CITY ---\n";
+        other.printSummary();
 
-    if ((ans == 'Y' || ans == 'y') && city.getRemainingBuildingSlots() > 0) {
-        cout << "Enter population boost (%): ";
-        float boost; cin >> boost;
-        clearInputBuffer();
-        Street* stPtr = city.getStreet(0);
-        Park newPark("CentralPark", boost, 30, stPtr);
-        city.addPark(newPark);
-        cout << "Park added. Remaining building slots: " << city.getRemainingBuildingSlots() << "\n";
-    } else if (city.getRemainingBuildingSlots() <= 0) {
-        cout << "Cannot add park: no remaining building slots.\n";
-    }
-
-    cout << "\n=== INITIAL CITY STATE ===\n";
-    cout << city << "\n";
-
-    cout << "\n--- Upgrading all residential buildings ---\n";
-    city.upgradeAllResidential();
-
-    cout << "\n=== CITY STATE AFTER UPGRADES ===\n";
-    cout << city << "\n";
-
-    cout << "Estimated total population: " << city.calculateTotalPopulation() << "\n";
-
-    cout << "\n--- Checking utility coverage ---\n";
-    if (city.utilitiesCoverPopulation()) {
-        cout << "All population is covered by utilities.\n";
-    } else {
-        cout << "Warning: Not all population is covered by utilities!\n";
+    } catch (const CityException& e) {
+        std::cout << "City error: " << e.what() << "\n";
+        return 1;
+    } catch (const std::exception& e) {
+        std::cout << "Std exception: " << e.what() << "\n";
+        return 2;
     }
 
     return 0;
