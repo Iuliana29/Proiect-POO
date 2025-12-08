@@ -104,7 +104,7 @@ int City::remainingSlots() const noexcept {
 }
 
 void City::printSummary() const {
-    std::cout << "City: " << name_ << " (Money=" << money_<< ", BuildingsTotal=" << Building::buildingCount() << ")\nResources:\n";
+    std::cout << "City: " << name_ << " (Money=" << money() << ", BuildingsTotal=" << Building::buildingCount() << ", MaxBuildings=" << maxBuildings() << ", RemainingSlots=" << remainingSlots() << ", TotalCapacity=" << totalCapacity() << ")\nResources:\n";
     for (const auto& kv : resources_)
         std::cout << "  " << kv.first << ": " << kv.second << "\n";
     std::cout << "Streets:\n";

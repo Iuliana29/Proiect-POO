@@ -75,8 +75,9 @@ void ResidentialBuilding::upgrade(std::map<std::string,int>& cityResources, int&
         if (cityResources[kv.first] < kv.second)
             throw InsufficientResourceException(kv.first);
     }
-    for (auto& kv : resourcesNeeded_)
+    for (const auto& kv : resourcesNeeded_)
         cityResources[kv.first] -= kv.second;
+
     ++level_;
     money += moneyProducedPerUpgrade_;
 }
