@@ -15,7 +15,7 @@ City& City::operator=(City other) noexcept {
     swap(*this, other);
     return *this;
 }
-
+// schimba doua orase intre ele
 void swap(City& a, City& b) noexcept {
     using std::swap;
     swap(a.name_, b.name_);
@@ -54,7 +54,7 @@ void City::setMoney(int m) noexcept {
 int City::money() const noexcept {
     return money_;
 }
-
+// creaza si adauga cladire prin creator
 void City::addBuilding(const std::string& typeId, const std::string& name, const std::vector<std::string>& params, std::size_t streetIdx) {
     Street* st = getStreet(streetIdx);
     auto b = BuildingCreator::instance().create(typeId, name, params, st);
@@ -64,7 +64,7 @@ void City::addBuilding(const std::string& typeId, const std::string& name, const
     }
     buildings_.push_back(std::move(b));
 }
-//apel prin pointer de baza
+// upgrade pentru toate cladirile (polimorfism)
 void City::upgradeAllBuildings() {
     for (auto& b : buildings_) {
         try {
@@ -74,7 +74,7 @@ void City::upgradeAllBuildings() {
         }
     }
 }
-///Dynamic cast
+// upgrade doar pentru cladiri rezidentiale (dynamic_cast)
 void City::upgradeResidentialOnly() {
     for (auto& b : buildings_) {
         if (auto r = std::dynamic_pointer_cast<ResidentialBuilding>(b)) {
@@ -92,7 +92,7 @@ int City::maxBuildings() const noexcept {
     for (const auto& s : streets_) totalSegments += s.length();
     return totalSegments * 2;
 }
-
+// adauga cladire direct, fara creator
 void City::addBuildingDirect(std::shared_ptr<Building> b) {
     if (static_cast<int>(buildings_.size()) >= maxBuildings())
         throw LimitExceededException();

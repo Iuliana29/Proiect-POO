@@ -1,60 +1,15 @@
-Cazul "Covered by utilities & enough buildings"
-Bucuresti
-100
-2
-wood
-3
-stone
-2
-2
-1
-5
-2
-5
-2
-Apt1
-25
-30
-1
-wood
-1
-Apt2
-10
-25
-1
-stone
-1
-PowerPlant
-Power
-115
-N
+CITY Bucuresti 100
 
-Cazul "No remaining building slots"
-Bucuresti
-100
-2
-wood
-3
-stone
-2
-1
-1
-1
-2
-Apt1
-25
-30
-1
-wood
-1
-Apt2
-10
-25
-1
-stone
-1
-PowerPlant
-Power
-115
-N
+STREETS 2
+STREET 2 2 1 2
+STREET 1 1 1
 
+RESOURCES 2
+RESOURCE wood 50
+RESOURCE stone 30
+
+BUILDINGS 4
+BUILDING residential Home 0 3 10 1 20
+BUILDING utility WaterPlant 0 4 Water 100 1 50
+BUILDING park CentralPark 0 2 15.0 30
+BUILDING commercial Mall 1 2 60 1
