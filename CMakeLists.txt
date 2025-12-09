@@ -58,6 +58,8 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         Building.hpp
         City.cpp
         City.hpp
+        Factory.cpp
+        Factory.hpp
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
