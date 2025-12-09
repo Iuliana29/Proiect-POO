@@ -21,7 +21,6 @@ int main() {
         std::string cityName;
         int cityMoney;
 
-        // -------------------- CITY --------------------
         fin >> tag;
         if (tag != "CITY") {
             throw CityException("Fisier invalid: lipseste sectiunea CITY");
@@ -30,7 +29,6 @@ int main() {
 
         City city(cityName, cityMoney);
 
-        // -------------------- STREETS --------------------
         int streetCount;
         fin >> tag;
         if (tag != "STREETS") {
@@ -59,7 +57,6 @@ int main() {
             city.addStreet(s);
         }
 
-        // -------------------- RESOURCES --------------------
         int resourceCount;
         fin >> tag;
         if (tag != "RESOURCES") {
@@ -79,7 +76,6 @@ int main() {
             city.addResource(resName, qty);
         }
 
-        // -------------------- BUILDINGS --------------------
         int buildingCount;
         fin >> tag;
         if (tag != "BUILDINGS") {
@@ -109,7 +105,7 @@ int main() {
             city.addBuilding(type, name, params, streetIndex);
         }
 
-        // ✅ Integram o FABRICA in oras prin BuildingFactory
+        // Integram o fabrica in oras prin CreatorBuilding
         city.addBuilding("factory", "WoodFactory", {"wood","15","30"}, 0);
 
         std::cout << "--- INITIAL CITY STATE ---\n";
@@ -127,7 +123,6 @@ int main() {
         city.printSummary();
         std::cout << "Total capacity: " << city.totalCapacity() << "\n";
 
-        // -------------------- DEMO SEPARAT: Factory produce o data --------------------
         {
             std::cout << "\n--- FACTORY DEMO (producere resurse o data) ---\n";
 
@@ -145,7 +140,6 @@ int main() {
                       << demoResources["wood"]
                       << ", bani = " << demoMoney << "\n";
 
-            // ⚡ AICI apelam efectiv metoda din FactoryBuilding
             demoFactory.produce(demoResources, demoMoney);
 
             std::cout << "Dupa productie:      wood = "
@@ -153,7 +147,6 @@ int main() {
                       << ", bani = " << demoMoney << "\n";
         }
 
-        // -------------------- Slot / upgrade demonstrativ --------------------
         std::map<std::string,int> extraRes{{"wood",5},{"stone",2}};
         int extraMoney = 50;
 
