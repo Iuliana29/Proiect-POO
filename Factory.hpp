@@ -19,7 +19,7 @@ protected:
         os << "Factory(name=" << name_ << ", production={";
 
         bool first = true;
-        for (auto& kv : production_) {
+        for (const auto& kv : production_) {
             if (!first) os << ", ";
             os << kv.first << ":" << kv.second;
             first = false;
