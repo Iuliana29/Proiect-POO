@@ -36,18 +36,18 @@ int Building::level() const noexcept {
 int Building::buildingCount() noexcept {
     return buildingCount_;
 }
-
-BuildingFactory& BuildingFactory::instance() {
-    static BuildingFactory inst;
+//cast static
+BuildingCreator& BuildingCreator::instance() {
+    static BuildingCreator inst;
     return inst;
 }
 
-void BuildingFactory::registerFactory(const std::string& id, Creator c) {
+void BuildingCreator::registerCreator(const std::string& id, Creator c) {
     std::lock_guard<std::mutex> lock(mtx_);
     registry_[id] = std::move(c);
 }
 
-std::shared_ptr<Building> BuildingFactory::create(const std::string& id, const std::string& name, const std::vector<std::string>& params, Street* street) const {
+std::shared_ptr<Building> BuildingCreator::create(const std::string& id, const std::string& name, const std::vector<std::string>& params, Street* street) const {
     std::lock_guard<std::mutex> lock(mtx_);
     auto it = registry_.find(id);
     if (it == registry_.end())
@@ -172,7 +172,7 @@ int CommercialBuilding::capacityEffect() const {
 
 namespace {
 [[maybe_unused]] const bool residential_registered = [](){
-    BuildingFactory::instance().registerFactory
+    BuildingCreator::instance().registerCreator
     ("residential",[](const std::string& name,const std::vector<std::string>& params,Street* st) -> std::shared_ptr<Building>
         {
             int cap   = !params.empty() ? std::stoi(params[0]) : 10;
@@ -186,7 +186,7 @@ namespace {
 }();
 
 [[maybe_unused]] const bool utility_registered = [](){
-    BuildingFactory::instance().registerFactory
+    BuildingCreator::instance().registerCreator
     (
     "utility",[](const std::string& name, const std::vector<std::string>& params, Street* st) -> std::shared_ptr<Building>
         {
@@ -201,7 +201,7 @@ namespace {
 }();
 
 [[maybe_unused]] const bool park_registered = [](){
-    BuildingFactory::instance().registerFactory
+    BuildingCreator::instance().registerCreator
     (
         "park",[](const std::string& name,const std::vector<std::string>& params,Street* st) -> std::shared_ptr<Building>
         {
@@ -214,7 +214,7 @@ namespace {
 }();
 
 [[maybe_unused]] const bool commercial_registered = [](){
-    BuildingFactory::instance().registerFactory
+    BuildingCreator::instance().registerCreator
     (
         "commercial",[](const std::string& name,const std::vector<std::string>& params,Street* st) -> std::shared_ptr<Building>
         {
@@ -227,30 +227,30 @@ namespace {
 }();
 }
 
-Block::Block(std::shared_ptr<Building> b) noexcept : building_(std::move(b)) {}
+Slot::Slot(std::shared_ptr<Building> b) noexcept : building_(std::move(b)) {}
 
-void Block::setBuilding(std::shared_ptr<Building> b) noexcept {
+void Slot::setBuilding(std::shared_ptr<Building> b) noexcept {
     building_ = std::move(b);
 }
-
-void Block::upgradeBlock(std::map<std::string,int>& resources, int& money) const {
-    if (!building_) throw CityException("No building in block to upgrade");
+//apel prin pointer de baza
+void Slot::upgradeSlot(std::map<std::string,int>& resources, int& money) const {
+    if (!building_) throw CityException("No building in slot to upgrade");
     building_->upgrade(resources, money);
 }
 
-void Block::show(std::ostream& os) const {
+void Slot::show(std::ostream& os) const {
     if (building_) {
         building_->print(os);
     } else {
-        os << "Empty block";
+        os << "Empty slot";
     }
 }
 
-int Block::capacity() const noexcept {
+int Slot::capacity() const noexcept {
     if (!building_) return 0;
     return building_->capacityEffect();
 }
 
-std::shared_ptr<Building> Block::building() const noexcept {
+std::shared_ptr<Building> Slot::building() const noexcept {
     return building_;
 }

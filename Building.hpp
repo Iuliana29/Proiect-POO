@@ -24,6 +24,7 @@ public:
     Building& operator=(const Building&) = default;
     void print(std::ostream& os) const;
     friend std::ostream& operator<<(std::ostream& os, const Building& b);
+    //functii virtuale
     virtual void upgrade(std::map<std::string,int>& cityResources, int& money) = 0;
     [[nodiscard]] virtual std::shared_ptr<Building> clone_shared() const = 0;
     [[nodiscard]] virtual int capacityEffect() const = 0;
@@ -32,7 +33,7 @@ public:
     [[nodiscard]] static int buildingCount() noexcept;
 };
 
-class BuildingFactory {
+class BuildingCreator {
 public:
     using Creator = std::function<std::shared_ptr<Building>(const std::string&, const std::vector<std::string>&, Street*)>;
 
@@ -41,12 +42,12 @@ private:
     mutable std::mutex mtx_;
 
 public:
-    static BuildingFactory& instance();
-    void registerFactory(const std::string& id, Creator c);
+    static BuildingCreator& instance();
+    void registerCreator(const std::string& id, Creator c);
 
     std::shared_ptr<Building> create(const std::string& id, const std::string& name, const std::vector<std::string>& params, Street* street) const;
 };
-
+//clase derivate
 class ResidentialBuilding : public Building {
     int capacityBase_;
     std::map<std::string,int> resourcesNeeded_;
@@ -111,14 +112,14 @@ public:
     [[nodiscard]] int capacityEffect() const override;
 };
 
-class Block {
+class Slot {
     std::shared_ptr<Building> building_;
 public:
-    explicit Block(std::shared_ptr<Building> b = nullptr) noexcept;
+    explicit Slot(std::shared_ptr<Building> b = nullptr) noexcept;
 
     void setBuilding(std::shared_ptr<Building> b) noexcept;
 
-    void upgradeBlock(std::map<std::string,int>& resources, int& money) const;
+    void upgradeSlot(std::map<std::string,int>& resources, int& money) const;
     void show(std::ostream& os) const;
 
     [[nodiscard]] int capacity() const noexcept;

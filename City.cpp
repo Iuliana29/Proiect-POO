@@ -57,14 +57,14 @@ int City::money() const noexcept {
 
 void City::addBuilding(const std::string& typeId, const std::string& name, const std::vector<std::string>& params, std::size_t streetIdx) {
     Street* st = getStreet(streetIdx);
-    auto b = BuildingFactory::instance().create(typeId, name, params, st);
+    auto b = BuildingCreator::instance().create(typeId, name, params, st);
     if (auto p = std::dynamic_pointer_cast<Park>(b)) {
         if (money_ < p->cost()) throw CityException("Not enough money for park");
         money_ -= p->cost();
     }
     buildings_.push_back(std::move(b));
 }
-
+//apel prin pointer de baza
 void City::upgradeAllBuildings() {
     for (auto& b : buildings_) {
         try {
@@ -74,7 +74,7 @@ void City::upgradeAllBuildings() {
         }
     }
 }
-
+///Dynamic cast
 void City::upgradeResidentialOnly() {
     for (auto& b : buildings_) {
         if (auto r = std::dynamic_pointer_cast<ResidentialBuilding>(b)) {

@@ -32,30 +32,26 @@ int main() {
         std::cout << "Total capacity: " << city.totalCapacity() << "\n";
         std::map<std::string,int> extraRes{{"wood",5},{"stone",2}};
         int extraMoney = 50;
-        Block b1(std::make_shared<ResidentialBuilding>(
-            "BlockHome", 5, 1,
+        Slot sl1(std::make_shared<ResidentialBuilding>(
+            "SlotHome", 5, 1,
             std::map<std::string,int>{{"wood",5},{"stone",2}},
             10, city.getStreet(0)));
-        std::cout << "\nBlock1 info: ";
-        b1.show(std::cout);
-        std::cout << "\nBlock1 capacity: " << b1.capacity() << "\n";
-        b1.upgradeBlock(extraRes, extraMoney);
-        std::cout << "After upgrade, Block1 capacity: " << b1.capacity()
-                  << ", extraMoney=" << extraMoney << "\n";
-        Block b2;
-        b2.setBuilding(b1.building());
-        std::cout << "\nBlock2 info (copied from Block1): ";
-        b2.show(std::cout);
-        std::cout << "\nBlock2 capacity: " << b2.capacity() << "\n";
-        auto extraBuilding = std::make_shared<ResidentialBuilding>(
-            "ExtraHome", 3, 1,
-            std::map<std::string,int>{{"wood",5},{"stone",2}},
-            5, city.getStreet(0));
+        std::cout << "\nSlot1 info: ";
+        sl1.show(std::cout);
+        std::cout << "\nSlot1 capacity: " << sl1.capacity() << "\n";
+        sl1.upgradeSlot(extraRes, extraMoney);
+        std::cout << "After upgrade, Slot1 capacity: " << sl1.capacity() << ", extraMoney=" << extraMoney << "\n";
+        Slot sl2;
+        sl2.setBuilding(sl1.building());
+        std::cout << "\nSlot2 info (copied from Slot1): ";
+        sl2.show(std::cout);
+        std::cout << "\nSlot2 capacity: " << sl2.capacity() << "\n";
+        auto extraBuilding = std::make_shared<ResidentialBuilding>
+        ("ExtraHome", 3, 1, std::map<std::string,int>{{"wood",5},{"stone",2}}, 5, city.getStreet(0));
         city.addBuildingDirect(extraBuilding);
         std::cout << "\n--- CITY STATE AFTER addBuildingDirect ---\n";
         city.printSummary();
-        std::cout << "Total capacity after ExtraHome: "
-                  << city.totalCapacity() << "\n";
+        std::cout << "Total capacity after ExtraHome: " << city.totalCapacity() << "\n";
         City other = city;
         other.setMoney(500);
         std::cout << "\n--- COPIED CITY ---\n";
