@@ -1,8 +1,13 @@
-#include "Building.hpp"
-#include "Street.hpp"
-#include "Exceptions.hpp"
-#include <algorithm>
+#include "../include/Building.hpp"
+#include "../include/Street.hpp"
+#include "../include/Exceptions.hpp"
+#include "../include/BuildingVisitor.hpp"
+#include "../include/Factory.hpp"
 
+void ResidentialBuilding::accept(BuildingVisitor& v) { v.visit(*this); }
+void UtilityBuilding::accept(BuildingVisitor& v) { v.visit(*this); }
+void Park::accept(BuildingVisitor& v) { v.visit(*this); }
+void CommercialBuilding::accept(BuildingVisitor& v) { v.visit(*this); }
 int Building::buildingCount_ = 0;
 
 // constructor baza pentru cladire
@@ -42,15 +47,13 @@ BuildingCreator& BuildingCreator::instance() {
     return inst;
 }
 
-// inregistrare tip cladire -> funcție de creare
+// inregistrare tip cladire -> functie de creare
 void BuildingCreator::registerCreator(const std::string& id, Creator c) {
-    std::lock_guard<std::mutex> lock(mtx_);
     registry_[id] = std::move(c);
 }
 
 // creaza cladire din registru dupa id
 std::shared_ptr<Building> BuildingCreator::create( const std::string& id, const std::string& name, const std::vector<std::string>& params,Street* street) const {
-    std::lock_guard<std::mutex> lock(mtx_);
     auto it = registry_.find(id);
     if (it == registry_.end())
         throw CityException("Unknown building type: " + id);
@@ -72,21 +75,21 @@ void ResidentialBuilding::printImpl(std::ostream& os) const {
 }
 
 // upgrade – consuma resurse si produce bani
-void ResidentialBuilding::upgrade(std::map<std::string,int>& cityResources, int& money) {
-    if (level_ >= maxLevel_)
-        return;
+void ResidentialBuilding::upgrade(ResourcePool<int>& cityResources, int& money) {
+    if (level_ >= maxLevel_) return;
 
-    // verificare resurse necesare
     for (const auto& kv : resourcesNeeded_) {
-        if (cityResources[kv.first] < kv.second)
+        if (cityResources.get(kv.first) < kv.second)
             throw InsufficientResourceException(kv.first);
     }
-    for (const auto& kv : resourcesNeeded_)
-        cityResources[kv.first] -= kv.second;
+    for (const auto& kv : resourcesNeeded_) {
+        cityResources.consume(kv.first, kv.second);
+    }
 
     ++level_;
     money += moneyProducedPerUpgrade_;
 }
+
 
 // clona polimorfa
 std::shared_ptr<Building> ResidentialBuilding::clone_shared() const {
@@ -119,7 +122,7 @@ void UtilityBuilding::printImpl(std::ostream& os) const {
     }
 }
 
-void UtilityBuilding::upgrade(std::map<std::string,int>&, int& money) {
+void UtilityBuilding::upgrade(ResourcePool<int>&, int& money) {
     if (level_ >= maxLevel_) return;
     if (money < moneyCostPerUpgrade_)
         throw CityException("Not enough money to upgrade utility");
@@ -151,7 +154,7 @@ void Park::printImpl(std::ostream& os) const {
     }
 }
 
-void Park::upgrade(std::map<std::string,int>&, int&) {
+void Park::upgrade(ResourcePool<int>&, int&) {
     if (level_ < maxLevel_) ++level_;
 }
 
@@ -191,7 +194,7 @@ void CommercialBuilding::printImpl(std::ostream& os) const {
 }
 
 // upgrade – cost fix in functie de nivel
-void CommercialBuilding::upgrade(std::map<std::string,int>&, int& money) {
+void CommercialBuilding::upgrade(ResourcePool<int>&, int& money) {
     int cost = 20 * level_;
     if (money < cost)
         throw CityException("Not enough money to upgrade commercial building");
@@ -290,7 +293,7 @@ void Slot::setBuilding(std::shared_ptr<Building> b) noexcept {
 }
 
 // upgrade pornind de la pointer de baza
-void Slot::upgradeSlot(std::map<std::string,int>& resources, int& money) const {
+void Slot::upgradeSlot(ResourcePool<int>& resources, int& money) const {
     if (!building_) throw CityException("No building in slot to upgrade");
     building_->upgrade(resources, money);
 }

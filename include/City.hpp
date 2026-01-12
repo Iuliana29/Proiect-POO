@@ -1,17 +1,17 @@
 #ifndef CITY_HPP
 #define CITY_HPP
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 #include "Building.hpp"
 #include "Street.hpp"
+#include "ResourcePool.hpp"
 
 class City {
     std::string name_;
     int money_ = 0;
-    std::map<std::string,int> resources_;
+    ResourcePool<int> resources_;
     std::vector<Street> streets_;
     std::vector<std::shared_ptr<Building>> buildings_;
 
@@ -34,6 +34,7 @@ public:
     [[nodiscard]] int remainingSlots() const noexcept;
     void printSummary() const;
     [[nodiscard]] int totalCapacity() const noexcept;
+    ResourcePool<long> producedStats_;
 };
 
 #endif // CITY_HPP

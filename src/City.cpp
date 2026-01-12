@@ -1,7 +1,8 @@
-#include "City.hpp"
-#include "Exceptions.hpp"
+#include "../include/City.hpp"
+#include "../include/Exceptions.hpp"
 #include <iostream>
 #include <utility>
+#include "../include/EconomyVisitor.hpp"
 
 City::City(std::string n, int startingMoney) noexcept: name_(std::move(n)), money_(startingMoney) {}
 
@@ -42,10 +43,10 @@ const Street* City::getStreet(std::size_t idx) const {
 }
 
 void City::addResource(const std::string& type, int amount) {
-    if (amount < 0)
-        throw CityException("Cannot add negative resource");
-    resources_[type] += amount;
+    if (amount < 0) throw CityException("Cannot add negative resource");
+    resources_.add(type, amount);
 }
+
 
 void City::setMoney(int m) noexcept {
     money_ = m;
@@ -64,13 +65,15 @@ void City::addBuilding(const std::string& typeId, const std::string& name, const
     }
     buildings_.push_back(std::move(b));
 }
-// upgrade pentru toate cladirile (polimorfism)
+
+
 void City::upgradeAllBuildings() {
+    EconomyTickVisitor v(resources_, money_, producedStats_);
     for (auto& b : buildings_) {
         try {
-            b->upgrade(resources_, money_);
-        } catch (const InsufficientResourceException& e) {
-            std::cout << "Resource error while upgrading " << b->name()<< ": " << e.what() << "\n";
+            b->accept(v);
+        } catch (const CityException& e) {
+            std::cout << "Error on building " << b->name() << ": " << e.what() << "\n";
         }
     }
 }
@@ -105,7 +108,8 @@ int City::remainingSlots() const noexcept {
 
 void City::printSummary() const {
     std::cout << "City: " << name_ << " (Money=" << money() << ", BuildingsTotal=" << Building::buildingCount() << ", MaxBuildings=" << maxBuildings() << ", RemainingSlots=" << remainingSlots() << ", TotalCapacity=" << totalCapacity() << ")\nResources:\n";
-    for (const auto& kv : resources_)
+    std::cout << "Produced stats:\n";
+    for (const auto& kv : producedStats_.raw())
         std::cout << "  " << kv.first << ": " << kv.second << "\n";
     std::cout << "Streets:\n";
     for (std::size_t i = 0; i < streets_.size(); ++i) {

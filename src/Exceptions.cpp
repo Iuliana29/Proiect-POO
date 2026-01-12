@@ -1,4 +1,4 @@
-#include "Exceptions.hpp"
+#include "../include/Exceptions.hpp"
 
 CityException::CityException(std::string m) : msg_(std::move(m)) {}
 

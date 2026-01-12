@@ -1,7 +1,7 @@
-#include "Street.hpp"
+#include "../include/Street.hpp"
 #include <algorithm>
 
-// seteaza nivelul strazii în intervalul [1,3]
+// seteaza nivelul strazii in intervalul [1,3]
 Street::Street(int lvl) noexcept
     : level_(std::max(1, std::min(3, lvl))) {}
 
@@ -11,7 +11,7 @@ bool Street::addSegment(int seg) {
 
     // adaugam segmentul in vector
     segments_.push_back(seg);
-    (void)seg; // evita warning daca seg nu e folosit în debug
+    (void)seg; // evita warning daca seg nu e folosit in debug
     return true;
 }
 

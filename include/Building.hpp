@@ -4,11 +4,12 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
+#include "ResourcePool.hpp"
 
 class Street;
+class BuildingVisitor;
 class Building {
 protected:
     std::string name_;
@@ -25,28 +26,39 @@ public:
     void print(std::ostream& os) const;
     friend std::ostream& operator<<(std::ostream& os, const Building& b);
     //functii virtuale
-    virtual void upgrade(std::map<std::string,int>& cityResources, int& money) = 0;
+    virtual void upgrade(ResourcePool<int>& cityResources, int& money) = 0;
     [[nodiscard]] virtual std::shared_ptr<Building> clone_shared() const = 0;
     [[nodiscard]] virtual int capacityEffect() const = 0;
     [[nodiscard]] const std::string& name() const noexcept;
     [[nodiscard]] int level() const noexcept;
     [[nodiscard]] static int buildingCount() noexcept;
+    virtual void accept(BuildingVisitor& v) = 0;
 };
 
 class BuildingCreator {
 public:
-    using Creator = std::function<std::shared_ptr<Building>(const std::string&, const std::vector<std::string>&, Street*)>;
+    using Creator = std::function<
+        std::shared_ptr<Building>(
+            const std::string&,
+            const std::vector<std::string>&,
+            Street*
+        )
+    >;
 
 private:
     std::map<std::string, Creator> registry_;
-    mutable std::mutex mtx_;
 
 public:
     static BuildingCreator& instance();
     void registerCreator(const std::string& id, Creator c);
-
-    std::shared_ptr<Building> create(const std::string& id, const std::string& name, const std::vector<std::string>& params, Street* street) const;
+    std::shared_ptr<Building> create(
+        const std::string& id,
+        const std::string& name,
+        const std::vector<std::string>& params,
+        Street* street
+    ) const;
 };
+
 //clase derivate
 class ResidentialBuilding : public Building {
     int capacityBase_;
@@ -59,10 +71,10 @@ protected:
 
 public:
     ResidentialBuilding(const std::string& n, int cap, int lvl, const std::map<std::string,int>& resNeeded, int moneyPerUpgrade, Street* st);
-
-    void upgrade(std::map<std::string,int>& cityResources, int& money) override;
+    void upgrade(ResourcePool<int>& cityResources, int& money) override;
     [[nodiscard]] std::shared_ptr<Building> clone_shared() const override;
     [[nodiscard]] int capacityEffect() const override;
+    void accept(BuildingVisitor& v) override;
 };
 
 class UtilityBuilding : public Building {
@@ -76,9 +88,10 @@ protected:
 
 public:
     UtilityBuilding(const std::string& n, std::string t, double cov, int lvl, int moneyCost, Street* st);
-    void upgrade(std::map<std::string,int>& cityResources, int& money) override;
+    void upgrade(ResourcePool<int>& cityResources, int& money) override;
     [[nodiscard]] std::shared_ptr<Building> clone_shared() const override;
     [[nodiscard]] int capacityEffect() const override;
+    void accept(BuildingVisitor& v) override;
 };
 
 class Park : public Building {
@@ -91,10 +104,12 @@ protected:
 
 public:
     Park(const std::string& n, double boost, int cost, Street* st);
-    void upgrade(std::map<std::string,int>& cityResources, int& money) override;
+    void upgrade(ResourcePool<int>& cityResources, int& money) override;
     [[nodiscard]] std::shared_ptr<Building> clone_shared() const override;
     [[nodiscard]] int capacityEffect() const override;
     [[nodiscard]] int cost() const noexcept;
+    void accept(BuildingVisitor& v) override;
+
 };
 
 class CommercialBuilding : public Building {
@@ -106,10 +121,11 @@ protected:
 
 public:
     CommercialBuilding(const std::string& n, int baseCustomers, int lvl, Street* st);
-
-    void upgrade(std::map<std::string,int>& cityResources, int& money) override;
+    void upgrade(ResourcePool<int>& cityResources, int& money) override;
     [[nodiscard]] std::shared_ptr<Building> clone_shared() const override;
     [[nodiscard]] int capacityEffect() const override;
+    void accept(BuildingVisitor& v) override;
+
 };
 
 class Slot {
@@ -119,7 +135,7 @@ public:
 
     void setBuilding(std::shared_ptr<Building> b) noexcept;
 
-    void upgradeSlot(std::map<std::string,int>& resources, int& money) const;
+    void upgradeSlot(ResourcePool<int>& resources, int& money) const;
     void show(std::ostream& os) const;
 
     [[nodiscard]] int capacity() const noexcept;
