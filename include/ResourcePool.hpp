@@ -18,9 +18,6 @@ public:
         return (it == data_.end()) ? T{} : it->second;
     }
 
-    bool canConsume(const std::string& name, T qty) const {
-        return get(name) >= qty;
-    }
 
     void consume(const std::string& name, T qty) {
         auto cur = get(name);
