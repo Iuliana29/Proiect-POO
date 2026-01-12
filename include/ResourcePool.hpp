@@ -28,15 +28,6 @@ public:
         data_[name] = cur - qty;
     }
 
-    // consuma un set de resurse (wood, stone etc)
-    void consumeAll(const std::map<std::string, T>& needed) {
-        for (auto& kv : needed)
-            if (!canConsume(kv.first, kv.second))
-                throw InsufficientResourceException(kv.first);
-
-        for (auto& kv : needed)
-            consume(kv.first, kv.second);
-    }
     const std::map<std::string, T>& raw() const noexcept { return data_; }
 };
 
