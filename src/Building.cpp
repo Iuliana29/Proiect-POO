@@ -308,7 +308,7 @@ void Slot::show(std::ostream& os) const {
 }
 
 // capacitatea cladirii din slot
-int Slot::capacity() const noexcept {
+ int Slot::capacity() const noexcept {
     if (!building_) return 0;
     return building_->capacityEffect();
 }

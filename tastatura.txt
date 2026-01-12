@@ -1,15 +1,35 @@
-CITY Bucuresti 100
+CITY
+Metropolis 200
 
-STREETS 2
-STREET 2 2 1 2
-STREET 1 1 1
+STREETS
+2
+STREET
+1 3
+1 2 3
+STREET
+2 2
+4 5
 
-RESOURCES 2
-RESOURCE wood 50
-RESOURCE stone 30
+RESOURCES
+3
+RESOURCE
+wood 50
+RESOURCE
+stone 30
+RESOURCE
+water 20
 
-BUILDINGS 4
-BUILDING residential Home 0 3 10 1 20
-BUILDING utility WaterPlant 0 4 Water 100 1 50
-BUILDING park CentralPark 0 2 15.0 30
-BUILDING commercial Mall 1 2 60 1
+BUILDINGS
+4
+BUILDING
+residential HomeA 0 3
+5 1 10
+BUILDING
+commercial MallA 0 2
+40 1
+BUILDING
+utility WaterPlant 1 4
+Water 120 1 40
+BUILDING
+park CentralPark 1 2
+15.0 30
